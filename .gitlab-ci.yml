@@ -1,0 +1,14 @@
+java-build:
+  stage: build
+  script:
+    - mvn -U -e install
+  image: maven:3.5-jdk-8
+
+java-deploy:
+  stage: deploy
+  only:
+    - master
+    - /^RELEASE-.*$/
+  script:
+    - mvn -U clean deploy 
+  image: maven:3.5-jdk-8
