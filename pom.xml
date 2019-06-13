@@ -29,6 +29,7 @@
     </properties>
     <build>
         <plugins>
+        
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -53,6 +54,28 @@
                     </execution>
                 </executions>
             </plugin>
+            
+		      <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-assembly-plugin</artifactId>
+		        <executions>
+		          <execution>
+		            <id>package-templates</id>
+		            <phase>package</phase>
+		            <goals>
+		              <goal>single</goal>
+		            </goals>
+		            <configuration>
+		              <appendAssemblyId>true</appendAssemblyId>
+		              <attach>true</attach>
+		              <descriptors>
+		                <descriptor>src/assembly/module.xml</descriptor>
+		              </descriptors>
+		            </configuration>
+		          </execution>
+		        </executions>
+		      </plugin>
+                  
         </plugins>
     </build>
 
