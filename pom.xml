@@ -26,6 +26,7 @@
         <version.aws-java-sdk-sns>1.11.548</version.aws-java-sdk-sns>
         <version.commons-lang>2.6</version.commons-lang>
         <version.picketbox>5.0.2.Final</version.picketbox>
+        <version.gson>2.8.5</version.gson>
     </properties>
     <build>
         <plugins>
@@ -167,5 +168,11 @@
             <version>${version.picketbox}</version>
             <scope>provided</scope>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${version.gson}</version>
+            <scope>provided</scope>
+        </dependency>
+      </dependencies>
 </project>

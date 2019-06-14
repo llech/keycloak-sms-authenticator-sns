@@ -4,5 +4,6 @@ target/*
 .project
 *.i??
 .idea
+dependency-reduced-pom.xml
 node_modules/
 /target/
