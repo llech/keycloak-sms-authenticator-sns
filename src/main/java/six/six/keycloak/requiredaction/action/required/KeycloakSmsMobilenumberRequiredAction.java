@@ -46,7 +46,7 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             mobileNumber = mobileNumberCreds.get(0);
         }
 
-        if (mobileNumber != null && validateTelephoneNumber(mobileNumber, KeycloakSmsAuthenticatorUtil.getMessage(context, KeycloakSmsConstants.MSG_MOBILE_REGEXP))) {
+        if (mobileNumber != null && validateTelephoneNumber(mobileNumber, KeycloakSmsAuthenticatorUtil.getMessage(context.getSession(), context.getRealm(), context.getUser(), KeycloakSmsConstants.MSG_MOBILE_REGEXP))) {
             // Mobile number is configured
             context.ignore();
         } else {
@@ -100,21 +100,19 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
         
         if (isConfirmPhoneNo) {
           // first validate phone number format, if correct try to send SMS
-          boolean phoneNoValid = phoneNo != null && phoneNo.length() > 0 && validateTelephoneNumber(phoneNo,KeycloakSmsAuthenticatorUtil.getMessage(context, KeycloakSmsConstants.MSG_MOBILE_REGEXP));
+          boolean phoneNoValid = phoneNo != null && phoneNo.length() > 0 && validateTelephoneNumber(phoneNo,KeycloakSmsAuthenticatorUtil.getMessage(context.getSession(), context.getRealm(), context.getUser(), KeycloakSmsConstants.MSG_MOBILE_REGEXP));
           if (phoneNoValid) {
-            List<String> mobileNumber = new ArrayList<String>();
-            mobileNumber.add(phoneNo);
-            UserModel user = context.getUser();
-            user.setAttribute(KeycloakSmsConstants.ATTR_MOBILE, mobileNumber);
+            // temporary storage
+            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, phoneNo);
             
             // generate and send SMS
-            AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+            AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("horisen-sms-authenticator");
             long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
             logger.debug("Using nrOfDigits " + nrOfDigits);
             long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
             logger.debug("Using ttl " + ttl + " (s)");
-            String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
-            //String code = "123456";
+            //String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
+            String code = "123456";
             storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
             
             // goto sms-validation-code
@@ -128,40 +126,48 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
                 .createForm("sms-validation-mobile-number.ftl");
             context.challenge(challenge);
           }
-        }
-        
-        String answer = (context.getHttpRequest().getDecodedFormParameters().getFirst("mobile_number"));
-        String answer2 = (context.getHttpRequest().getDecodedFormParameters().getFirst("mobile_number_confirm"));
-        String isResend = (context.getHttpRequest().getDecodedFormParameters().getFirst("resend"));
-        String isLogin = (context.getHttpRequest().getDecodedFormParameters().getFirst("login"));
-        
-        logger.info("Expected code = " + expectedCode + "    entered code = " + smsCode);
-        
-        // TODO support resending SMS
-        logger.info("isResend: "+isResend+", isLogin: "+isLogin);
-        if (answer != null && answer.length() > 0 && answer.equals(answer2) && validateTelephoneNumber(answer,KeycloakSmsAuthenticatorUtil.getMessage(context, KeycloakSmsConstants.MSG_MOBILE_REGEXP))) {
-            logger.debug("Valid matching mobile numbers supplied, save credential ...");
-            List<String> mobileNumber = new ArrayList<String>();
-            mobileNumber.add(answer);
-
-            UserModel user = context.getUser();
-            user.setAttribute(KeycloakSmsConstants.ATTR_MOBILE, mobileNumber);
-
+        } else if (isEditPhoneNo) {
+          // back to sms-validation-mobile-number
+          Response challenge = context.form().createForm("sms-validation-mobile-number.ftl");
+          context.challenge(challenge);
+        } else if (isConfirmSmsCode) {
+          // verify the sms code
+          logger.info("Expected code = " + expectedCode + "    entered code = " + smsCode);
+          if (StringUtils.equals(expectedCode, smsCode)) {
+             // save temporary phone numer as real phone number
+            String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
+            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE, tmpPhoneNo);
+            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, "");
+            
             context.success();
-        } else if (answer != null && answer2 !=null && !answer.equals(answer2)) {
-            logger.debug("Supplied mobile number values do not match...");
+          } else {
+            // wrong code
             Response challenge = context.form()
-                    .setError("mobile_number.no.match")
-                    .createForm("sms-validation-mobile-number.ftl");
+                .setError("sms_code.no.valid")
+                .createForm("sms-validation-code.ftl");
             context.challenge(challenge);
-        } else {
-            logger.debug("Either one of two fields wasn\'t complete, or the first contains an invalid number...");
-            Response challenge = context.form()
-                    .setError("mobile_number.no.valid")
-                    .createForm("sms-validation-mobile-number.ftl");
-            context.challenge(challenge);
+          }
         }
+
     }
+    
+    private void writeUserAttribute(UserModel user, String attribute, String value) {
+      List<String> list = new ArrayList<String>();
+      list.add(value);
+      // temporary storage
+      user.setAttribute(attribute, list);
+    }
+    
+    private String getUserAttribute(UserModel user, String attribute){
+      List<String> list = user.getAttribute(attribute);
+
+      String value = null;
+      if (list != null && !list.isEmpty()) {
+          value = list.get(0);
+      }
+
+      return  value;
+  }
 
     public void close() {
         logger.debug("close called ...");

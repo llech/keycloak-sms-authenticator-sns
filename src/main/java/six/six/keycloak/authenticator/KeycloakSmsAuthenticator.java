@@ -87,7 +87,7 @@ public class KeycloakSmsAuthenticator implements Authenticator {
                 String code = "123456";
 
                 storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
-                if (KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context)) {
+                if (KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context.getAuthenticatorConfig(), context.getSession(), context.getRealm(), context.getUser())) {
                     Response challenge = context.form().createForm("sms-validation.ftl");
                     context.challenge(challenge);
                 } else {
