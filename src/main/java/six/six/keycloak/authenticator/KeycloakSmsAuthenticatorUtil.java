@@ -162,7 +162,7 @@ public class KeycloakSmsAuthenticatorUtil {
     }
 
 
-    static boolean sendSmsCode(String mobileNumber, String code, AuthenticationFlowContext context) {
+    public static boolean sendSmsCode(String mobileNumber, String code, AuthenticationFlowContext context) {
         final AuthenticatorConfigModel config = context.getAuthenticatorConfig();
 
         // Send an SMS
@@ -200,7 +200,7 @@ public class KeycloakSmsAuthenticatorUtil {
         }
     }
 
-    static String getSmsCode(long nrOfDigits) {
+    public static String getSmsCode(long nrOfDigits) {
         if (nrOfDigits < 1) {
             throw new RuntimeException("Number of digits must be bigger than 0");
         }

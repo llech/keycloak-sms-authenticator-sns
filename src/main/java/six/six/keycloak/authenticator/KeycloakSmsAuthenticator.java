@@ -82,7 +82,9 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
                 logger.debug("Using ttl " + ttl + " (s)");
 
-                String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
+                // TODO until sms service not working, use 123456
+                //String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
+                String code = "123456";
 
                 storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
                 if (KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context)) {
