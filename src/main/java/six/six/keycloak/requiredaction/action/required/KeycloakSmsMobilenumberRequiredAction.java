@@ -106,7 +106,7 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, phoneNo);
             
             // generate and send SMS
-            AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("horisen-sms-authenticator");
+            AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
             long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
             logger.debug("Using nrOfDigits " + nrOfDigits);
             long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
@@ -117,6 +117,7 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             
             // goto sms-validation-code
             Response challenge = context.form()
+                .setAttribute("mobile_number", phoneNo)
                 .createForm("sms-validation-code.ftl");
             context.challenge(challenge);
 
@@ -142,7 +143,9 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             context.success();
           } else {
             // wrong code
+            String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
             Response challenge = context.form()
+                .setAttribute("mobile_number", tmpPhoneNo)
                 .setError("sms_code.no.valid")
                 .createForm("sms-validation-code.ftl");
             context.challenge(challenge);

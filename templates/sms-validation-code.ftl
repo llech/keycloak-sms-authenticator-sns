@@ -9,7 +9,7 @@
 
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="totp" class="${properties.kcLabelClass!}">Please confirm received SMS code</label>
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("sms_code.msg.enterSmsCode",mobile_number!)}</label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
