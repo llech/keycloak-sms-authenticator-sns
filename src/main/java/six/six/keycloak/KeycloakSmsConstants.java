@@ -25,7 +25,11 @@ public class KeycloakSmsConstants {
     // User credentials (used to persist the sent sms code + expiration time cluster wide)
     public static final String USR_CRED_MDL_SMS_CODE = "sms-auth.code";
     public static final String USR_CRED_MDL_SMS_EXP_TIME = "sms-auth.exp-time";
-
+    
+    // Mock config
+    public static final String CONF_PRP_SMSM_USE_MOCK = "sms-auth.code.use-mock"; 
+    public static final String CONF_PRP_SMSM_MOCK_CODE = "sms-auth.code.mock-code"; 
+    
     // Messages
     public static final String MSG_MOBILE_REGEXP = "mobile_number.regexp.validation";
     public static final String MSG_MOBILE_PREFIX_DEFAULT = "mobile_number.prefix.default";

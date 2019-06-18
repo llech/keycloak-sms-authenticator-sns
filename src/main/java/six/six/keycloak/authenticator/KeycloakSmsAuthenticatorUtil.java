@@ -177,8 +177,11 @@ public class KeycloakSmsAuthenticatorUtil {
                 case HORISEN:
                   smsService = new HorisenSMSService(endpoint);
                   break;
+                case AMAZON_SNS:  
+                  smsService=new SnsNotificationService();
+                  break;
                 default:
-                    smsService=new SnsNotificationService();
+                  throw new IllegalArgumentException("Unsupported gateway type: "+gateway);
             }
 
             result=smsService.send(checkMobileNumber(setDefaultCountryCodeIfZero(mobileNumber, 

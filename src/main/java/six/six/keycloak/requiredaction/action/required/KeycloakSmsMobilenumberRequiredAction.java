@@ -3,6 +3,7 @@ package six.six.keycloak.requiredaction.action.required;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.credential.CredentialModel;
@@ -111,15 +112,25 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             logger.debug("Using nrOfDigits " + nrOfDigits);
             long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
             logger.debug("Using ttl " + ttl + " (s)");
-            //String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
-            String code = "123456";
+            
+            boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
+            String mockCode = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMSM_MOCK_CODE, "123456");
+            String code = useMock ? mockCode : KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
+            
             storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
             
-            // goto sms-validation-code
-            Response challenge = context.form()
-                .setAttribute("mobile_number", phoneNo)
-                .createForm("sms-validation-code.ftl");
-            context.challenge(challenge);
+            if (useMock || KeycloakSmsAuthenticatorUtil.sendSmsCode(phoneNo, code, config, context.getSession(), context.getRealm(), context.getUser())) {
+              // goto sms-validation-code
+              Response challenge = context.form()
+                  .setAttribute("mobile_number", phoneNo)
+                  .createForm("sms-validation-code.ftl");
+              context.challenge(challenge);
+            } else {
+                Response challenge = context.form()
+                        .setError("sms-auth.not.send")
+                        .createForm("sms-validation-mobile-number.ftl");
+                context.challenge(challenge);
+            }
 
           } else {
             Response challenge = context.form()
