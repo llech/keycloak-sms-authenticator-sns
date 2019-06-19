@@ -1,16 +1,25 @@
 package six.six.keycloak.authenticator;
 
 
-import com.google.i18n.phonenumbers.NumberParseException;
-import com.google.i18n.phonenumbers.PhoneNumberUtil;
-import com.google.i18n.phonenumbers.Phonenumber;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.Random;
+
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.ThemeProvider;
+
+import com.google.i18n.phonenumbers.NumberParseException;
+import com.google.i18n.phonenumbers.PhoneNumberUtil;
+import com.google.i18n.phonenumbers.Phonenumber;
+
 import six.six.gateway.Gateways;
 import six.six.gateway.SMSService;
 import six.six.gateway.aws.snsclient.SnsNotificationService;
@@ -18,11 +27,6 @@ import six.six.gateway.horisen.HorisenSMSService;
 import six.six.gateway.lyrasms.LyraSMSService;
 import six.six.keycloak.EnvSubstitutor;
 import six.six.keycloak.KeycloakSmsConstants;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
 
 /**
  * Created by joris on 18/11/2016.
@@ -135,12 +139,12 @@ public class KeycloakSmsAuthenticatorUtil {
     }
 
 
-    public static String getMessage(AuthenticationFlowContext context, String key){
+    public static String getMessage(KeycloakSession session, RealmModel realm, UserModel user, String key){
         String result=null;
         try {
-            ThemeProvider themeProvider = context.getSession().getProvider(ThemeProvider.class, "extending");
-            Theme currentTheme = themeProvider.getTheme(context.getRealm().getLoginTheme(), Theme.Type.LOGIN);
-            Locale locale = context.getSession().getContext().resolveLocale(context.getUser());
+            ThemeProvider themeProvider = session.getProvider(ThemeProvider.class, "extending");
+            Theme currentTheme = themeProvider.getTheme(realm.getLoginTheme(), Theme.Type.LOGIN);
+            Locale locale = session.getContext().resolveLocale(user);
             result = currentTheme.getMessages(locale).getProperty(key);
         }catch (IOException e){
             logger.warn(key + "not found in messages");
@@ -148,22 +152,7 @@ public class KeycloakSmsAuthenticatorUtil {
         return result;
     }
 
-    public static String getMessage(RequiredActionContext context, String key){
-        String result=null;
-        try {
-            ThemeProvider themeProvider = context.getSession().getProvider(ThemeProvider.class, "extending");
-            Theme currentTheme = themeProvider.getTheme(context.getRealm().getLoginTheme(), Theme.Type.LOGIN);
-            Locale locale = context.getSession().getContext().resolveLocale(context.getUser());
-            result = currentTheme.getMessages(locale).getProperty(key);
-        }catch (IOException e){
-            logger.warn(key + "not found in messages");
-        }
-        return result;
-    }
-
-
-    static boolean sendSmsCode(String mobileNumber, String code, AuthenticationFlowContext context) {
-        final AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+    public static boolean sendSmsCode(String mobileNumber, String code, final AuthenticatorConfigModel config, final KeycloakSession session, final RealmModel realm, final UserModel user) {
 
         // Send an SMS
         KeycloakSmsAuthenticatorUtil.logger.debug("Sending " + code + "  to mobileNumber " + mobileNumber);
@@ -174,7 +163,7 @@ public class KeycloakSmsAuthenticatorUtil {
         String endpoint = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY_ENDPOINT));
         boolean isProxy = getConfigBoolean(config, KeycloakSmsConstants.PROXY_ENABLED);
 
-        String template =getMessage(context, KeycloakSmsConstants.CONF_PRP_SMS_TEXT);
+        String template =getMessage(session, realm, user, KeycloakSmsConstants.CONF_PRP_SMS_TEXT);
 
         String smsText = createMessage(template,code, mobileNumber);
         boolean result;
@@ -188,11 +177,17 @@ public class KeycloakSmsAuthenticatorUtil {
                 case HORISEN:
                   smsService = new HorisenSMSService(endpoint);
                   break;
+                case AMAZON_SNS:  
+                  smsService=new SnsNotificationService();
+                  break;
                 default:
-                    smsService=new SnsNotificationService();
+                  throw new IllegalArgumentException("Unsupported gateway type: "+gateway);
             }
 
-            result=smsService.send(checkMobileNumber(setDefaultCountryCodeIfZero(mobileNumber, getMessage(context, KeycloakSmsConstants.MSG_MOBILE_PREFIX_DEFAULT), getMessage(context, KeycloakSmsConstants.MSG_MOBILE_PREFIX_CONDITION))), smsText, smsUsr, smsPwd);
+            result=smsService.send(checkMobileNumber(setDefaultCountryCodeIfZero(mobileNumber, 
+                getMessage(session, realm, user, KeycloakSmsConstants.MSG_MOBILE_PREFIX_DEFAULT), 
+                getMessage(session, realm, user, KeycloakSmsConstants.MSG_MOBILE_PREFIX_CONDITION))), 
+                smsText, smsUsr, smsPwd);
           return result;
        } catch(Exception e) {
             logger.error("Fail to send SMS " ,e );
@@ -200,7 +195,7 @@ public class KeycloakSmsAuthenticatorUtil {
         }
     }
 
-    static String getSmsCode(long nrOfDigits) {
+    public static String getSmsCode(long nrOfDigits) {
         if (nrOfDigits < 1) {
             throw new RuntimeException("Number of digits must be bigger than 0");
         }

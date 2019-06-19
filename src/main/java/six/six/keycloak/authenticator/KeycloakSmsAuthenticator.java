@@ -82,10 +82,12 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
                 logger.debug("Using ttl " + ttl + " (s)");
 
-                String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
+                boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
+                String mockCode = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMSM_MOCK_CODE, "123456");
+                String code = useMock ? mockCode : KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
 
                 storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
-                if (KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context)) {
+                if (useMock || KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context.getAuthenticatorConfig(), context.getSession(), context.getRealm(), context.getUser())) {
                     Response challenge = context.form().createForm("sms-validation.ftl");
                     context.challenge(challenge);
                 } else {
