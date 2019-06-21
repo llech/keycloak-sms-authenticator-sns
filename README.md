@@ -21,6 +21,8 @@ Under Authentication > Flows:
 * Click on 'Actions > Add execution on the 'Browser with SMS Forms' line and add the 'SMS Authentication'
 * Set 'SMS Authentication' to 'REQUIRED' or 'ALTERNATIVE'
 * To configure the SMS Authenticator, click on Actions  Config and fill in the attributes.
+* You can use mock instead of sending real code.
+* You can define regex to validate phone number, for example use regex '^(\+|0*){0,1}41((-|\s){0,1}[0-9]+)+[0-9]$' to allow only Swiss phone numbers.
 
 Under Authentication > Bindings:
 * Select 'Browser with SMS' as the 'Browser Flow' for the REALM.

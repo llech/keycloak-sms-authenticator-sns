@@ -51,10 +51,17 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
 
         property = new ProviderConfigProperty();
         property.setName(KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH);
-        property.setLabel("Length of the SMS code");
+        property.setLabel("SMS code length");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Length of the SMS code.");
         property.setDefaultValue(6);
+        configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
+        property.setLabel("Phone no regex");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Regular expression for phone number validation.");
         configProperties.add(property);
 
         // SMS gateway

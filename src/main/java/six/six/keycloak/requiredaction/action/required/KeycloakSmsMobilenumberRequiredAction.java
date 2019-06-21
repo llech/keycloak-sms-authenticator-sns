@@ -47,7 +47,9 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             mobileNumber = mobileNumberCreds.get(0);
         }
 
-        if (mobileNumber != null && validateTelephoneNumber(mobileNumber, KeycloakSmsAuthenticatorUtil.getMessage(context.getSession(), context.getRealm(), context.getUser(), KeycloakSmsConstants.MSG_MOBILE_REGEXP))) {
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
+        if (StringUtils.isNotBlank(mobileNumber) && validateTelephoneNumber(mobileNumber, phoneNoRegexp)) {
             // Mobile number is configured
             context.ignore();
         } else {
@@ -99,15 +101,40 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
           expectedCode = creds.getValue();
         }
         
-        if (isConfirmPhoneNo) {
+        if (isEditPhoneNo) {
+          // back to sms-validation-mobile-number
+          Response challenge = context.form().createForm("sms-validation-mobile-number.ftl");
+          context.challenge(challenge);
+        } else if (isConfirmSmsCode) {
+          // verify the sms code
+          logger.info("Expected code = " + expectedCode + "    entered code = " + smsCode);
+          if (StringUtils.equals(expectedCode, smsCode)) {
+             // save temporary phone numer as real phone number
+            String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
+            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE, tmpPhoneNo);
+            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, "");
+            
+            context.success();
+          } else {
+            // wrong code
+            String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
+            Response challenge = context.form()
+                .setAttribute("mobile_number", tmpPhoneNo)
+                .setError("sms_code.no.valid")
+                .createForm("sms-validation-code.ftl");
+            context.challenge(challenge);
+          }
+        } else {
+          AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+          String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
+          // default action - when entering the flow
           // first validate phone number format, if correct try to send SMS
-          boolean phoneNoValid = phoneNo != null && phoneNo.length() > 0 && validateTelephoneNumber(phoneNo,KeycloakSmsAuthenticatorUtil.getMessage(context.getSession(), context.getRealm(), context.getUser(), KeycloakSmsConstants.MSG_MOBILE_REGEXP));
+          boolean phoneNoValid = phoneNo != null && phoneNo.length() > 0 && validateTelephoneNumber(phoneNo,phoneNoRegexp);
           if (phoneNoValid) {
             // temporary storage
             writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, phoneNo);
             
             // generate and send SMS
-            AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
             long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
             logger.debug("Using nrOfDigits " + nrOfDigits);
             long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
@@ -136,29 +163,6 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             Response challenge = context.form()
                 .setError("mobile_number.no.valid")
                 .createForm("sms-validation-mobile-number.ftl");
-            context.challenge(challenge);
-          }
-        } else if (isEditPhoneNo) {
-          // back to sms-validation-mobile-number
-          Response challenge = context.form().createForm("sms-validation-mobile-number.ftl");
-          context.challenge(challenge);
-        } else if (isConfirmSmsCode) {
-          // verify the sms code
-          logger.info("Expected code = " + expectedCode + "    entered code = " + smsCode);
-          if (StringUtils.equals(expectedCode, smsCode)) {
-             // save temporary phone numer as real phone number
-            String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
-            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE, tmpPhoneNo);
-            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, "");
-            
-            context.success();
-          } else {
-            // wrong code
-            String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
-            Response challenge = context.form()
-                .setAttribute("mobile_number", tmpPhoneNo)
-                .setError("sms_code.no.valid")
-                .createForm("sms-validation-code.ftl");
             context.challenge(challenge);
           }
         }

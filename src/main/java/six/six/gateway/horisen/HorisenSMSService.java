@@ -3,6 +3,7 @@ package six.six.gateway.horisen;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -37,13 +38,19 @@ public class HorisenSMSService implements SMSService
   @Override
   public boolean send(String phoneNumber, String message, String login, String pw)
   {
+    // first sanitize and verify phone number
+    if (StringUtils.isBlank(phoneNumber))
+      return false;
+    // clean-up input, removing whitespaces, hyphens, trailing plus and zeros
+    String phoneNumberSanitized = phoneNumber.replaceAll("-|\\s|^\\+|^0*", "");
+    
     SmsAuth auth = new SmsAuth();
     auth.setUsername(login);
     auth.setPassword(pw);
     SmsRequest request = new SmsRequest();
     request.setAuth(auth);
     request.setSender("Keycloak");
-    request.setReceiver(phoneNumber);
+    request.setReceiver(phoneNumberSanitized);
     request.setText(message);
     
     String gatewayUrl = url + "/bulk/sendsms";
@@ -70,12 +77,10 @@ public class HorisenSMSService implements SMSService
       return false;
     }
     int statusCode = httpResponse.getStatusLine().getStatusCode();
-    if (statusCode != 200) {
-      logger.error("HTTP Status "+statusCode+" "+httpResponse.getStatusLine().getReasonPhrase());
+    if (statusCode < 200 || statusCode >= 300) {
+      logger.warn("HTTP Status "+statusCode+" "+httpResponse.getStatusLine().getReasonPhrase());
       return false;
     } 
-    // TODO remove this, only for test purposes
-    //logger.info("Phone number: "+phoneNumber+", message: "+message);
     
     return true;
   }

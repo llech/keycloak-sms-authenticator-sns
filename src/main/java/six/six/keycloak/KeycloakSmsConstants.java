@@ -26,6 +26,9 @@ public class KeycloakSmsConstants {
     public static final String USR_CRED_MDL_SMS_CODE = "sms-auth.code";
     public static final String USR_CRED_MDL_SMS_EXP_TIME = "sms-auth.exp-time";
     
+    // phone number regexp
+    public static final String CONF_PRP_SMS_MOBILE_REGEXP = "sms-auth.mobile_number.regexp";
+    
     // Mock config
     public static final String CONF_PRP_SMSM_USE_MOCK = "sms-auth.code.use-mock"; 
     public static final String CONF_PRP_SMSM_MOCK_CODE = "sms-auth.code.mock-code"; 
