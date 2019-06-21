@@ -47,7 +47,9 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             mobileNumber = mobileNumberCreds.get(0);
         }
 
-        if (StringUtils.isNotBlank(mobileNumber) && validateTelephoneNumber(mobileNumber, KeycloakSmsAuthenticatorUtil.getMessage(context.getSession(), context.getRealm(), context.getUser(), KeycloakSmsConstants.MSG_MOBILE_REGEXP))) {
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
+        if (StringUtils.isNotBlank(mobileNumber) && validateTelephoneNumber(mobileNumber, phoneNoRegexp)) {
             // Mobile number is configured
             context.ignore();
         } else {
@@ -123,15 +125,16 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             context.challenge(challenge);
           }
         } else {
+          AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+          String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
           // default action - when entering the flow
           // first validate phone number format, if correct try to send SMS
-          boolean phoneNoValid = phoneNo != null && phoneNo.length() > 0 && validateTelephoneNumber(phoneNo,KeycloakSmsAuthenticatorUtil.getMessage(context.getSession(), context.getRealm(), context.getUser(), KeycloakSmsConstants.MSG_MOBILE_REGEXP));
+          boolean phoneNoValid = phoneNo != null && phoneNo.length() > 0 && validateTelephoneNumber(phoneNo,phoneNoRegexp);
           if (phoneNoValid) {
             // temporary storage
             writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, phoneNo);
             
             // generate and send SMS
-            AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
             long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
             logger.debug("Using nrOfDigits " + nrOfDigits);
             long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
