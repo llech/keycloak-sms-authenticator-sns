@@ -70,12 +70,10 @@ public class HorisenSMSService implements SMSService
       return false;
     }
     int statusCode = httpResponse.getStatusLine().getStatusCode();
-    if (statusCode != 200) {
-      logger.error("HTTP Status "+statusCode+" "+httpResponse.getStatusLine().getReasonPhrase());
+    if (statusCode < 200 || statusCode >= 300) {
+      logger.warn("HTTP Status "+statusCode+" "+httpResponse.getStatusLine().getReasonPhrase());
       return false;
     } 
-    // TODO remove this, only for test purposes
-    //logger.info("Phone number: "+phoneNumber+", message: "+message);
     
     return true;
   }

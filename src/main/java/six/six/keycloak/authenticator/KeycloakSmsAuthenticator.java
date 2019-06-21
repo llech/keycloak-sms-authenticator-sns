@@ -1,5 +1,6 @@
 package six.six.keycloak.authenticator;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -72,7 +73,7 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         String mobileNumberVerified = getMobileNumberVerified(user);
 
         if (onlyForVerification==false || isOnlyForVerificationMode(onlyForVerification, mobileNumber,mobileNumberVerified)){
-            if (mobileNumber != null) {
+            if (StringUtils.isNotBlank(mobileNumber)) {
                 // The mobile number is configured --> send an SMS
                 long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
                 logger.debug("Using nrOfDigits " + nrOfDigits);
