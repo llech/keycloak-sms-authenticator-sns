@@ -23,7 +23,7 @@
                 </div>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submit_phone_no" id="kc-submit_phone_no" type="submit" value="${msg("doSubmit")}"/>
+                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="submit_phone_no" id="kc-submit_phone_no" type="submit" value="${msg("doContinue")}"/>
                     </div>
             </div>
         </form>
