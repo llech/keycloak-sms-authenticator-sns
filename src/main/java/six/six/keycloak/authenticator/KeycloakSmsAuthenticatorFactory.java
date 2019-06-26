@@ -59,7 +59,7 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
         
         property = new ProviderConfigProperty();
         property.setName(KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
-        property.setLabel("Phone no regex");
+        property.setLabel("Phone number regex");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Regular expression for phone number validation.");
         configProperties.add(property);
