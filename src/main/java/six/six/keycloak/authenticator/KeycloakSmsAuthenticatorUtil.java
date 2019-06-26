@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.RequiredActionContext;
@@ -208,7 +209,7 @@ public class KeycloakSmsAuthenticatorUtil {
 
     public static boolean validateTelephoneNumber(String telephoneNumber, String regexp ) {
         boolean result=true;
-        if(regexp!=null){
+        if(StringUtils.isNotBlank(regexp)){
             result =telephoneNumber.matches(regexp);
         }
 
