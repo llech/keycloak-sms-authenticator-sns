@@ -35,7 +35,7 @@
                 </div>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="change_phone_no" id="kc-change_phone_no" type="submit" value="${msg("doChangePhoneNo")}"/>
+                        <input class="${properties.kcFormLinkClass!}" style="background:none; border-width:0px; text-decoration:underline; cursor: pointer;" name="change_phone_no" id="kc-change_phone_no" type="submit" value="${msg("doChangePhoneNo")}"/>
                 </div>
             </div>            
         </form>
