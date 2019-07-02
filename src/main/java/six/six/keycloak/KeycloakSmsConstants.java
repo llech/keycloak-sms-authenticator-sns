@@ -7,12 +7,12 @@ public class KeycloakSmsConstants {
     public static final String ATTR_MOBILE = "mobile_number";
     public static final String ATTR_MOBILE_TMP = "mobile_number_tmp";
     public static final String ATTR_MOBILE_VERIFIED = "mobile_number_verified";
+    public static final String ATTR_BACKUP_CODE = "sms2fa_backup_code";
     public static final String VERIFY_MOBILENUMBER_KEY = "VERIFY_MOBILENUMBER_KEY";
     public static final String ANSW_SMS_CODE = "smsCode";
 
     public static final String CONF_PRP_SMS_CODE_TTL = "sms-auth.code.ttl";
     public static final String CONF_PRP_SMS_CODE_LENGTH = "sms-auth.code.length";
-    public static final String CONF_PRP_SMS_TEXT = "sms-auth.msg.text";
 
     // Gateway
     public static final String CONF_PRP_SMS_GATEWAY = "sms-auth.sms.gateway";
@@ -33,7 +33,14 @@ public class KeycloakSmsConstants {
     public static final String CONF_PRP_SMSM_USE_MOCK = "sms-auth.code.use-mock"; 
     public static final String CONF_PRP_SMSM_MOCK_CODE = "sms-auth.code.mock-code"; 
     
+    // backup 2fa code
+    public static final String CONF_PRP_SMSM_USE_2FA_BACKUP = "sms.auth.code.use-2fa-backup";
+    public static final String CONF_PRP_SMS_BACKUP_CODE_LENGTH = "sms-auth.code-2fa-backup.length";
+    
     // Messages
+    public static final String MSG_SMS_TEXT = "sms-auth.msg.text";
+    public static final String MSG_2FA_BACKUP_TEXT = "sms-auth.msg.text-2fa-backup";
+    
     public static final String MSG_MOBILE_REGEXP = "mobile_number.regexp.validation";
     public static final String MSG_MOBILE_PREFIX_DEFAULT = "mobile_number.prefix.default";
     public static final String MSG_MOBILE_PREFIX_CONDITION = "mobile_number.prefix.condition";

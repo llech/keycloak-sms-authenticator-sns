@@ -114,6 +114,21 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
         property.setHelpText("Mock code to use when 'Use mock' is set to true");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMSM_USE_2FA_BACKUP);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setLabel("Use 2fa backup code");
+        property.setHelpText("Create and save 2fa backup code needed to reset the phone number (currently only through support)");
+        configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMS_BACKUP_CODE_LENGTH);
+        property.setLabel("2FA backup code length");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Length of the 2fa backup code.");
+        property.setDefaultValue(10);
+        configProperties.add(property);
 
         // Proxy
         property = new ProviderConfigProperty();

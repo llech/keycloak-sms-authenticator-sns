@@ -92,6 +92,11 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
         // values
         String phoneNo = (context.getHttpRequest().getDecodedFormParameters().getFirst("mobile_number"));
         String smsCode = (context.getHttpRequest().getDecodedFormParameters().getFirst("sms_code_confirm"));
+        
+        // module configuration
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        boolean isUse2faBackup = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_2FA_BACKUP);
+        boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
 
         KeycloakSession session = context.getSession();
         List codeCreds = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_CODE);
@@ -114,6 +119,17 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE, tmpPhoneNo);
             writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, "");
             
+            if (isUse2faBackup) {
+              long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_BACKUP_CODE_LENGTH, 10L);
+              String code = KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
+              writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_BACKUP_CODE, code);
+              // TODO show page with the code
+              boolean isSent = useMock || KeycloakSmsAuthenticatorUtil.sendBackupCode(tmpPhoneNo, code, config, context.getSession(), context.getRealm(), context.getUser());
+              if (!isSent) {
+                logger.warn("Failed to send SMS with backup code to phone number "+tmpPhoneNo);
+              }
+            }
+            
             context.success();
           } else {
             // wrong code
@@ -125,7 +141,6 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             context.challenge(challenge);
           }
         } else {
-          AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
           String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
           // default action - when entering the flow
           // first validate phone number format, if correct try to send SMS
@@ -140,7 +155,6 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
             logger.debug("Using ttl " + ttl + " (s)");
             
-            boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
             String mockCode = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMSM_MOCK_CODE, "123456");
             String code = useMock ? mockCode : KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
             
