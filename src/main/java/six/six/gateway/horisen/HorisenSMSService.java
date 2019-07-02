@@ -10,6 +10,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
 import com.google.gson.Gson;
@@ -93,7 +94,9 @@ public class HorisenSMSService implements SMSService
         logger.warn("Failed to decode response from server, HTTP Status "+httpResponse.getStatusLine());
       }
       return false;
-    } 
+    } else {
+      EntityUtils.consumeQuietly(httpResponse.getEntity());
+    }
     
     return true;
   }
