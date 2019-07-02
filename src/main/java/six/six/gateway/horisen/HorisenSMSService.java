@@ -1,6 +1,8 @@
 package six.six.gateway.horisen;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.lang.StringUtils;
@@ -78,7 +80,18 @@ public class HorisenSMSService implements SMSService
     }
     int statusCode = httpResponse.getStatusLine().getStatusCode();
     if (statusCode < 200 || statusCode >= 300) {
-      logger.warn("HTTP Status "+statusCode+" "+httpResponse.getStatusLine().getReasonPhrase());
+      // decode response
+      try {
+        InputStream input = httpResponse.getEntity().getContent();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        org.apache.commons.io.IOUtils.copy(input, baos);
+        org.apache.commons.io.IOUtils.closeQuietly(input);
+        String responseText = new String(baos.toByteArray(), "UTF-8");
+  
+        logger.warn("HTTP Status "+statusCode+" "+responseText);
+      } catch (IOException e) {
+        logger.warn("Failed to decode response from server, HTTP Status "+httpResponse.getStatusLine());
+      }
       return false;
     } 
     
