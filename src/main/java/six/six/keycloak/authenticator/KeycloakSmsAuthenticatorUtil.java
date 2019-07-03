@@ -104,14 +104,6 @@ public class KeycloakSmsAuthenticatorUtil {
         return value;
     }
 
-    public static String createMessage(String text,String code, String mobileNumber) {
-        if(text !=null){
-            text = text.replaceAll("%sms-code%", code);
-            text = text.replaceAll("%phonenumber%", mobileNumber);
-        }
-        return text;
-    }
-
     public static String setDefaultCountryCodeIfZero(String mobileNumber,String prefix ,String condition) {
 
         if (prefix!=null && condition!=null && mobileNumber.startsWith(condition)) {
@@ -152,11 +144,32 @@ public class KeycloakSmsAuthenticatorUtil {
         }
         return result;
     }
-
+    
+    public static boolean sendBackupCode(String mobileNumber, String code, final AuthenticatorConfigModel config, final KeycloakSession session, final RealmModel realm, final UserModel user) {
+      String template = getMessage(session, realm, user, KeycloakSmsConstants.MSG_2FA_BACKUP_TEXT);
+      if (StringUtils.isBlank(template)) {
+        KeycloakSmsAuthenticatorUtil.logger.error(KeycloakSmsConstants.MSG_2FA_BACKUP_TEXT+" is not configured!");
+        return false;
+      }
+      String smsText = template.replaceAll("%code%", code);
+      return sendSms(mobileNumber, smsText, config, session, realm, user);
+    }
+    
     public static boolean sendSmsCode(String mobileNumber, String code, final AuthenticatorConfigModel config, final KeycloakSession session, final RealmModel realm, final UserModel user) {
+      KeycloakSmsAuthenticatorUtil.logger.debug("Sending " + code + "  to mobileNumber " + mobileNumber);
+      String template = getMessage(session, realm, user, KeycloakSmsConstants.MSG_SMS_TEXT);
+      if (StringUtils.isBlank(template)) {
+        KeycloakSmsAuthenticatorUtil.logger.error(KeycloakSmsConstants.MSG_SMS_TEXT+" is not configured!");
+        return false;
+      }
+      String smsText = template.replaceAll("%sms-code%", code).replaceAll("%phonenumber%", mobileNumber);
+
+      return sendSms(mobileNumber, smsText, config, session, realm, user);
+    }
+
+    private static boolean sendSms(String mobileNumber, String smsText, final AuthenticatorConfigModel config, final KeycloakSession session, final RealmModel realm, final UserModel user) {
 
         // Send an SMS
-        KeycloakSmsAuthenticatorUtil.logger.debug("Sending " + code + "  to mobileNumber " + mobileNumber);
 
         String smsUsr = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_CLIENTTOKEN));
         String smsPwd = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_CLIENTSECRET));
@@ -164,9 +177,6 @@ public class KeycloakSmsAuthenticatorUtil {
         String endpoint = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY_ENDPOINT));
         boolean isProxy = getConfigBoolean(config, KeycloakSmsConstants.PROXY_ENABLED);
 
-        String template =getMessage(session, realm, user, KeycloakSmsConstants.CONF_PRP_SMS_TEXT);
-
-        String smsText = createMessage(template,code, mobileNumber);
         boolean result;
         SMSService smsService;
         try {

@@ -1,6 +1,8 @@
 package six.six.gateway.horisen;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
 import org.apache.commons.lang.StringUtils;
@@ -8,6 +10,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
 import com.google.gson.Gson;
@@ -78,9 +81,22 @@ public class HorisenSMSService implements SMSService
     }
     int statusCode = httpResponse.getStatusLine().getStatusCode();
     if (statusCode < 200 || statusCode >= 300) {
-      logger.warn("HTTP Status "+statusCode+" "+httpResponse.getStatusLine().getReasonPhrase());
+      // decode response
+      try {
+        InputStream input = httpResponse.getEntity().getContent();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        org.apache.commons.io.IOUtils.copy(input, baos);
+        org.apache.commons.io.IOUtils.closeQuietly(input);
+        String responseText = new String(baos.toByteArray(), "UTF-8");
+  
+        logger.warn("HTTP Status "+statusCode+" "+responseText);
+      } catch (IOException e) {
+        logger.warn("Failed to decode response from server, HTTP Status "+httpResponse.getStatusLine());
+      }
       return false;
-    } 
+    } else {
+      EntityUtils.consumeQuietly(httpResponse.getEntity());
+    }
     
     return true;
   }
