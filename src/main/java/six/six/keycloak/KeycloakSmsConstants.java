@@ -29,6 +29,9 @@ public class KeycloakSmsConstants {
     
     // phone number regexp
     public static final String CONF_PRP_SMS_MOBILE_REGEXP = "sms-auth.mobile_number.regexp";
+    public static final String CONF_PRP_SMS_MOBILE_PREFIX_DEFAULT = "sms-authmobile_number.prefix.default";
+    public static final String CONF_PRP_SMS_MOBILE_PREFIX_CONDITION = "sms-authmobile_number.prefix.condition";
+    public static final String DEFVALUE_CONF_PRP_SMS_MOBILE_PREFIX_CONDITION = "^0[^0].*$";
     
     // Mock config
     public static final String CONF_PRP_SMSM_USE_MOCK = "sms-auth.code.use-mock"; 
@@ -41,15 +44,6 @@ public class KeycloakSmsConstants {
     // Messages
     public static final String MSG_SMS_TEXT = "sms-auth.msg.text";
     public static final String MSG_2FA_BACKUP_TEXT = "sms-auth.msg.text-2fa-backup";
-    
-    public static final String MSG_MOBILE_REGEXP = "mobile_number.regexp.validation";
-    public static final String MSG_MOBILE_PREFIX_DEFAULT = "mobile_number.prefix.default";
-    public static final String MSG_MOBILE_PREFIX_CONDITION = "mobile_number.prefix.condition";
-    /*
-    mobile_number.prefix.default=+44
-    mobile_number.prefix.condition=07
-    mobile_number.regexp.validation=^(?:(?:\\(?(?:0(?:0|11)\\)?[\\s-]?\\(?|\\+)44\\)?[\\s-]?(?:\\(?0\\)?[\\s-]?)?)|(?:\\(?0))(?:(?:\\d{5}\\)?[\\s-]?\\d{4,5})|(?:\\d{4}\\)?[\\s-]?(?:\\d{5}|\\d{3}[\\s-]?\\d{3}))|(?:\\d{3}\\)?[\\s-]?\\d{3}[\\s-]?\\d{3,4})|(?:\\d{2}\\)?[\\s-]?\\d{4}[\\s-]?\\d{4}))(?:[\\s-]?(?:x|ext\\.?|\\#)\\d{3,4})?$
-     */
 
     // Proxy
     public static final String PROXY_ENABLED = "proxy_enabled";

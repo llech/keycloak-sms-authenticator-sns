@@ -63,6 +63,22 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
         property.setType(ProviderConfigProperty.STRING_TYPE);
         property.setHelpText("Regular expression for phone number validation.");
         configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_PREFIX_DEFAULT);
+        property.setLabel("Default country prefix");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setHelpText("Default country prefix to apply for numbers matching condition");
+        configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_PREFIX_CONDITION);
+        property.setLabel("Condition for adding default country prefix");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        property.setDefaultValue(KeycloakSmsConstants.DEFVALUE_CONF_PRP_SMS_MOBILE_PREFIX_CONDITION);
+        property.setHelpText("Condition in form of regular expression for adding default country prefix. Defaults to '"
+            + KeycloakSmsConstants.DEFVALUE_CONF_PRP_SMS_MOBILE_PREFIX_CONDITION + "' (match number starting with single zero)");
+        configProperties.add(property);
 
         // SMS gateway
         property = new ProviderConfigProperty();
