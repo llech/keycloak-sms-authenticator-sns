@@ -52,11 +52,15 @@ public class KeycloakSmsAuthenticatorUtil {
 
     public static String getConfigString(AuthenticatorConfigModel config, String configName, String defaultValue) {
 
-        String value = defaultValue;
+        String value = null;
 
         if (config.getConfig() != null) {
             // Get value
             value = config.getConfig().get(configName);
+        }
+        
+        if (StringUtils.isEmpty(value)) {
+          value = defaultValue;
         }
 
         return value;
@@ -106,9 +110,12 @@ public class KeycloakSmsAuthenticatorUtil {
 
     public static String setDefaultCountryCodeIfZero(String mobileNumber,String prefix ,String condition) {
 
-        if (prefix!=null && condition!=null && mobileNumber.startsWith(condition)) {
-            mobileNumber = prefix + mobileNumber.substring(1);
+        if (mobileNumber.matches(condition)) {
+          // remove trailing zeros
+          mobileNumber = mobileNumber.replaceAll("^0*", "");
+          return prefix + mobileNumber;
         }
+        
         return mobileNumber;
     }
 
@@ -176,6 +183,11 @@ public class KeycloakSmsAuthenticatorUtil {
         String gateway = getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY);
         String endpoint = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY_ENDPOINT));
         boolean isProxy = getConfigBoolean(config, KeycloakSmsConstants.PROXY_ENABLED);
+        
+        String mobilePrefixDefault =  EnvSubstitutor.envSubstitutor.replace(getConfigString(config, 
+            KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_PREFIX_DEFAULT));
+        String mobilePrefixCondition =  EnvSubstitutor.envSubstitutor.replace(getConfigString(config, 
+            KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_PREFIX_CONDITION, KeycloakSmsConstants.DEFVALUE_CONF_PRP_SMS_MOBILE_PREFIX_CONDITION));
 
         boolean result;
         SMSService smsService;
@@ -195,10 +207,12 @@ public class KeycloakSmsAuthenticatorUtil {
                   throw new IllegalArgumentException("Unsupported gateway type: "+gateway);
             }
 
-            result=smsService.send(checkMobileNumber(setDefaultCountryCodeIfZero(mobileNumber, 
-                getMessage(session, realm, user, KeycloakSmsConstants.MSG_MOBILE_PREFIX_DEFAULT), 
-                getMessage(session, realm, user, KeycloakSmsConstants.MSG_MOBILE_PREFIX_CONDITION))), 
-                smsText, smsUsr, smsPwd);
+            // first validate mobile number
+            if (StringUtils.isNotBlank(mobilePrefixDefault)) {
+              mobileNumber = setDefaultCountryCodeIfZero(mobileNumber, mobilePrefixDefault, mobilePrefixCondition);
+            }
+            mobileNumber = checkMobileNumber(mobileNumber);
+            result=smsService.send(mobileNumber, smsText, smsUsr, smsPwd);
           return result;
        } catch(Exception e) {
             logger.error("Fail to send SMS " ,e );
