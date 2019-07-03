@@ -89,6 +89,7 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
         boolean isConfirmPhoneNo = StringUtils.isNotEmpty( (context.getHttpRequest().getDecodedFormParameters().getFirst("submit_phone_no")) );
         boolean isConfirmSmsCode = StringUtils.isNotEmpty( (context.getHttpRequest().getDecodedFormParameters().getFirst("submit_code")) );
         boolean isEditPhoneNo = StringUtils.isNotEmpty( (context.getHttpRequest().getDecodedFormParameters().getFirst("change_phone_no")) );
+        boolean isLoginReady = StringUtils.isNotEmpty( (context.getHttpRequest().getDecodedFormParameters().getFirst("login_ready")) );
         // values
         String phoneNo = (context.getHttpRequest().getDecodedFormParameters().getFirst("mobile_number"));
         String smsCode = (context.getHttpRequest().getDecodedFormParameters().getFirst("sms_code_confirm"));
@@ -106,7 +107,17 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
           expectedCode = creds.getValue();
         }
         
-        if (isEditPhoneNo) {
+        if (isLoginReady) {
+          String codeConfirmed = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_CODE_CONFIRMED);
+          if ("true".equals(codeConfirmed)) {
+            context.getUser().removeAttribute(KeycloakSmsConstants.ATTR_CODE_CONFIRMED);
+            context.success();
+          } else {
+            // error
+            logger.warn("Flow error: login_ready step active, but sms-code-confirmed is "+codeConfirmed);
+            context.failure();
+          }
+        } else if (isEditPhoneNo) {
           // back to sms-validation-mobile-number
           Response challenge = context.form().createForm("sms-validation-mobile-number.ftl");
           context.challenge(challenge);
@@ -114,10 +125,12 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
           // verify the sms code
           logger.info("Expected code = " + expectedCode + "    entered code = " + smsCode);
           if (StringUtils.equals(expectedCode, smsCode)) {
+            // write information that code is confirmed (to prevent manipulation from client side)
+            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_CODE_CONFIRMED, "true");
              // save temporary phone numer as real phone number
             String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
             writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE, tmpPhoneNo);
-            writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP, "");
+            context.getUser().removeAttribute(KeycloakSmsConstants.ATTR_MOBILE_TMP);
             
             if (isUse2faBackup) {
               long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_BACKUP_CODE_LENGTH, 10L);
@@ -128,9 +141,13 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
               if (!isSent) {
                 logger.warn("Failed to send SMS with backup code to phone number "+tmpPhoneNo);
               }
+              Response challenge = context.form()
+                  .setAttribute("backup_code", code)
+                  .createForm("sms-show-backup-code.ftl");
+              context.challenge(challenge);
+            } else {
+              context.success();
             }
-            
-            context.success();
           } else {
             // wrong code
             String tmpPhoneNo = getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_MOBILE_TMP);
