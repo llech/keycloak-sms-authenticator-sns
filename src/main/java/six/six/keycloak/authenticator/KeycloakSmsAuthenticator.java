@@ -27,8 +27,6 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
     private static Logger logger = Logger.getLogger(KeycloakSmsAuthenticator.class);
 
-    public static final String CREDENTIAL_TYPE = "sms_validation";
-
     private enum CODE_STATUS {
         VALID,
         INVALID,
@@ -40,26 +38,6 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         return (mobileNumber ==null || onlyForVerification==true && !mobileNumber.equals(mobileNumberVerified) );
     }
 
-    private String getMobileNumber(UserModel user){
-        List<String> mobileNumberCreds = user.getAttribute(KeycloakSmsConstants.ATTR_MOBILE);
-
-        String mobileNumber = null;
-        if (mobileNumberCreds != null && !mobileNumberCreds.isEmpty()) {
-            mobileNumber = mobileNumberCreds.get(0);
-        }
-
-        return  mobileNumber;
-    }
-
-    private String getMobileNumberVerified(UserModel user){
-        List<String> mobileNumberVerifieds = user.getAttribute(KeycloakSmsConstants.ATTR_MOBILE_VERIFIED);
-
-        String mobileNumberVerified = null;
-        if (mobileNumberVerifieds != null && !mobileNumberVerifieds.isEmpty()) {
-            mobileNumberVerified = mobileNumberVerifieds.get(0);
-        }
-        return  mobileNumberVerified;
-    }
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
@@ -69,8 +47,8 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
         boolean onlyForVerification=KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.MOBILE_VERIFICATION_ENABLED);
 
-        String mobileNumber =getMobileNumber(user);
-        String mobileNumberVerified = getMobileNumberVerified(user);
+        String mobileNumber = KeycloakSmsAuthenticatorUtil.getMobileNumber(user);
+        String mobileNumberVerified = KeycloakSmsAuthenticatorUtil.getMobileNumberVerified(user);
 
         if (onlyForVerification==false || isOnlyForVerificationMode(onlyForVerification, mobileNumber,mobileNumberVerified)){
             if (StringUtils.isNotBlank(mobileNumber)) {
@@ -114,7 +92,6 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         }else{
             logger.debug("Skip SMS code because onlyForVerification " + onlyForVerification + " or  mobileNumber==mobileNumberVerified");
             context.success();
-
         }
     }
 

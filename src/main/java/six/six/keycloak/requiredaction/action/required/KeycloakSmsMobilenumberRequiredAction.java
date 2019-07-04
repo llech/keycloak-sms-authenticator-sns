@@ -29,13 +29,13 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
     public static final String PROVIDER_ID = "sms_auth_check_mobile";
 
     public void evaluateTriggers(RequiredActionContext context) {
-        logger.debug("evaluateTriggers called ...");
+        logger.info("evaluateTriggers called ...");
     }
 
 
 
     public void requiredActionChallenge(RequiredActionContext context) {
-        logger.debug("requiredActionChallenge called ...");
+        logger.info("requiredActionChallenge called ...");
 
         UserModel user = context.getUser();
 
@@ -83,7 +83,7 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
        * success after verify
        */
       
-        logger.debug("processAction called ...");
+        logger.info("processAction called ...");
         
         // check what action was called
         boolean isConfirmPhoneNo = StringUtils.isNotEmpty( (context.getHttpRequest().getDecodedFormParameters().getFirst("submit_phone_no")) );
