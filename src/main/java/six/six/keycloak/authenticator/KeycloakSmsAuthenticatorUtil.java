@@ -239,4 +239,25 @@ public class KeycloakSmsAuthenticatorUtil {
 
         return result;
     }
+    
+    public static String getMobileNumber(UserModel user){
+      List<String> mobileNumberCreds = user.getAttribute(KeycloakSmsConstants.ATTR_MOBILE);
+
+      String mobileNumber = null;
+      if (mobileNumberCreds != null && !mobileNumberCreds.isEmpty()) {
+          mobileNumber = mobileNumberCreds.get(0);
+      }
+
+      return  mobileNumber;
+  }
+
+  public static String getMobileNumberVerified(UserModel user){
+      List<String> mobileNumberVerifieds = user.getAttribute(KeycloakSmsConstants.ATTR_MOBILE_VERIFIED);
+
+      String mobileNumberVerified = null;
+      if (mobileNumberVerifieds != null && !mobileNumberVerifieds.isEmpty()) {
+          mobileNumberVerified = mobileNumberVerifieds.get(0);
+      }
+      return  mobileNumberVerified;
+  }
 }

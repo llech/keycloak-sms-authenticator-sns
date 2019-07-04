@@ -1,1 +1,2 @@
 six.six.keycloak.authenticator.KeycloakSmsAuthenticatorFactory
+six.six.keycloak.authenticator.KeycloakSmsDirectGrantBlockingAuthenticatorFactory
