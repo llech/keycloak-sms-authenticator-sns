@@ -98,8 +98,50 @@ public class KeycloakSmsAuthenticator implements Authenticator {
     @Override
     public void action(AuthenticationFlowContext context) {
         logger.debug("action called ... context = " + context);
-        CODE_STATUS status = validateCode(context);
+        
+        boolean isReset = StringUtils.isNotEmpty( context.getHttpRequest().getDecodedFormParameters().getFirst("reset_credentials") );
+        String backupCode = context.getHttpRequest().getDecodedFormParameters().getFirst(KeycloakSmsConstants.ANSW_BACKUP_CODE);
+        
         Response challenge = null;
+        
+        if (isReset) {
+          if (StringUtils.isNotEmpty(backupCode)) {
+            CODE_STATUS status = validateBackupCode(context, backupCode);
+            switch (status) {
+              case VALID:
+                // remove mobile number from user attributes and trigger action
+                context.getUser().removeAttribute(KeycloakSmsConstants.ATTR_MOBILE);
+                context.getUser().addRequiredAction(KeycloakSmsMobilenumberRequiredAction.PROVIDER_ID);
+                context.success();
+                break;
+              case INVALID:  
+                challenge = context.form()
+                  .setError("sms-auth.backup-code.invalid")
+                  .createForm("sms-backup-validation.ftl");
+                context.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, challenge);
+                break;
+              case EXPIRED:  
+                challenge = context.form()
+                  .setError("sms-auth.backup-code.expired")
+                  .createForm("sms-backup-validation.ftl");
+                context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
+                break;
+            }
+          } else {
+            // go to backup code validation page
+            challenge = context.form().createForm("sms-backup-validation.ftl");
+            context.challenge(challenge);
+          }
+          return;
+        } 
+        
+        // TODO support for button 'reset credentials', validate backup code, and call required action...
+        CODE_STATUS status = validateCode(context);
+        
+        // test for triggering another required action
+        //context.getUser().addRequiredAction(KeycloakSmsMobilenumberRequiredAction.PROVIDER_ID);
+        //context.success();
+        
         switch (status) {
             case EXPIRED:
                 challenge = context.form()
@@ -164,6 +206,17 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
     }
 
+    
+    protected CODE_STATUS validateBackupCode(AuthenticationFlowContext context, String backupCode) {
+      String backupCodeStored =  KeycloakSmsAuthenticatorUtil.getAttributeValue(context.getUser(), KeycloakSmsConstants.ATTR_BACKUP_CODE);
+      if (StringUtils.isBlank(backupCodeStored)) {
+        return CODE_STATUS.EXPIRED;
+      }
+      if (StringUtils.equals(backupCodeStored, backupCode)) {
+        return CODE_STATUS.VALID;
+      }
+      return CODE_STATUS.INVALID;
+    }
 
     protected CODE_STATUS validateCode(AuthenticationFlowContext context) {
         CODE_STATUS result = CODE_STATUS.INVALID;

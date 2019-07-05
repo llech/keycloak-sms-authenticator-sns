@@ -47,7 +47,7 @@ public class KeycloakSmsDirectGrantBlockingAuthenticator implements Authenticato
       // direct grant flow has not feedback, no place to sent and validate SMS, therefore, if use has phone number configured, make decision based on optionality
       if (context.getExecution().isRequired()) {
         context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
-        Response challengeResponse = Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity("Invalid user credentials").type(MediaType.APPLICATION_JSON_TYPE).build();
+        Response challengeResponse = Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity("Invalid user credentials").type(MediaType.TEXT_PLAIN).build();
         context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
       } else {
         context.attempted();
