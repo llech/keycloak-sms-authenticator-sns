@@ -135,12 +135,7 @@ public class KeycloakSmsAuthenticator implements Authenticator {
           return;
         } 
         
-        // TODO support for button 'reset credentials', validate backup code, and call required action...
         CODE_STATUS status = validateCode(context);
-        
-        // test for triggering another required action
-        //context.getUser().addRequiredAction(KeycloakSmsMobilenumberRequiredAction.PROVIDER_ID);
-        //context.success();
         
         switch (status) {
             case EXPIRED:
