@@ -51,6 +51,7 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
         String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
         if (StringUtils.isNotBlank(mobileNumber) && validateTelephoneNumber(mobileNumber, phoneNoRegexp)) {
             // Mobile number is configured
+            logger.warn("Ignored mobile number configuration, because mobile number is already configured");
             context.ignore();
         } else {
             // Mobile number is not configured or is invalid

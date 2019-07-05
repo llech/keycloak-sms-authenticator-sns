@@ -6,11 +6,11 @@
         <form id="kc-totp-login-form" class="${properties.kcFormClass!}" action="${url.loginAction}" method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcLabelWrapperClass!}">
-                    <label for="totp" class="${properties.kcLabelClass!}">${msg("sms_code.msg.enterSmsCode")}</label>
+                    <label for="totp" class="${properties.kcLabelClass!}">${msg("sms_code.msg.enterBackupCode")}</label>
                 </div>
 
                 <div class="${properties.kcInputWrapperClass!}">
-                    <input id="totp" name="smsCode" type="text" class="${properties.kcInputClass!}" />
+                    <input id="totp" name="backupCode" type="text" class="${properties.kcInputClass!}" />
                 </div>
             </div>
 
@@ -23,21 +23,9 @@
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doSubmit")}"/>
+                        <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="reset_credentials" id="kc-reset_credentials" type="submit" value="${msg("doSubmit")}"/>
                  </div>
             </div>
-            
-            <div class="${properties.kcFormGroupClass!}">
-                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
-                    <div class="${properties.kcFormOptionsWrapperClass!}">
-                    </div>
-                </div>
-                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <div class="${properties.kcFormButtonsWrapperClass!}">
-                        <input class="${properties.kcFormLinkClass!}" style="background:none; border-width:0px; text-decoration:underline; cursor: pointer;" name="reset_credentials" id="kc-reset_credentials" type="submit" value="${msg("doSmsResetCredentials")}"/>
-                </div>
-            </div>            
-            
         </form>
         <#if client?? && client.baseUrl?has_content>
             <p><a id="backToApplication" href="${client.baseUrl}">${msg("backToApplication")}</a></p>
