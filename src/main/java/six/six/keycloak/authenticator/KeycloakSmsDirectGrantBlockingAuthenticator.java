@@ -24,7 +24,6 @@ public class KeycloakSmsDirectGrantBlockingAuthenticator implements Authenticato
   @Override
   public void close()
   {
-    // TODO Auto-generated method stub
     
   }
 
@@ -65,21 +64,18 @@ public class KeycloakSmsDirectGrantBlockingAuthenticator implements Authenticato
   @Override
   public boolean requiresUser()
   {
-    // TODO Auto-generated method stub
     return true;
   }
 
   @Override
   public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user)
   {
-    // TODO Auto-generated method stub
     return true;
   }
 
   @Override
   public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user)
   {
-    // TODO Auto-generated method stub
     
   }
 

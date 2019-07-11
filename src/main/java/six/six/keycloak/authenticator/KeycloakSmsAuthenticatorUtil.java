@@ -2,10 +2,12 @@ package six.six.keycloak.authenticator;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -220,15 +222,12 @@ public class KeycloakSmsAuthenticatorUtil {
         }
     }
 
-    public static String getSmsCode(long nrOfDigits) {
+    public static String generateSmsCode(int nrOfDigits) {
         if (nrOfDigits < 1) {
             throw new RuntimeException("Number of digits must be bigger than 0");
         }
 
-        double maxValue = Math.pow(10.0, nrOfDigits); // 10 ^ nrOfDigits;
-        Random r = new Random();
-        long code = (long) (r.nextFloat() * maxValue);
-        return Long.toString(code);
+        return RandomStringUtils.randomNumeric(nrOfDigits);
     }
 
     public static boolean validateTelephoneNumber(String telephoneNumber, String regexp ) {
@@ -241,23 +240,33 @@ public class KeycloakSmsAuthenticatorUtil {
     }
     
     public static String getMobileNumber(UserModel user){
-      List<String> mobileNumberCreds = user.getAttribute(KeycloakSmsConstants.ATTR_MOBILE);
-
-      String mobileNumber = null;
-      if (mobileNumberCreds != null && !mobileNumberCreds.isEmpty()) {
-          mobileNumber = mobileNumberCreds.get(0);
-      }
-
-      return  mobileNumber;
-  }
+      return getUserAttribute(user, KeycloakSmsConstants.ATTR_MOBILE);
+   }
 
   public static String getMobileNumberVerified(UserModel user){
-      List<String> mobileNumberVerifieds = user.getAttribute(KeycloakSmsConstants.ATTR_MOBILE_VERIFIED);
-
-      String mobileNumberVerified = null;
-      if (mobileNumberVerifieds != null && !mobileNumberVerifieds.isEmpty()) {
-          mobileNumberVerified = mobileNumberVerifieds.get(0);
-      }
-      return  mobileNumberVerified;
+    return getUserAttribute(user, KeycloakSmsConstants.ATTR_MOBILE_VERIFIED);
   }
+  
+  
+  public static void writeUserAttribute(UserModel user, String attribute, String value) {
+    if (StringUtils.isEmpty(value)) {
+      user.removeAttribute(attribute);
+    } else {
+      List<String> list = new ArrayList<String>();
+      list.add(value);
+      // temporary storage
+      user.setAttribute(attribute, list);
+    }
+  }
+  
+  public static String getUserAttribute(UserModel user, String attribute){
+    List<String> list = user.getAttribute(attribute);
+
+    String value = null;
+    if (list != null && !list.isEmpty()) {
+        value = list.get(0);
+    }
+
+    return  value;
+}  
 }
