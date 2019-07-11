@@ -34,6 +34,17 @@
                 </div>
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
                     <div class="${properties.kcFormButtonsWrapperClass!}">
+                        <input class="${properties.kcFormLinkClass!}" style="background:none; border-width:0px; text-decoration:underline; cursor: pointer;" name="resend_sms" id="kc-resend_sms" type="submit" value="${msg("doSmsResend")}"/>
+                </div>
+            </div>  
+                        
+            <div class="${properties.kcFormGroupClass!}">
+                <div id="kc-form-options" class="${properties.kcFormOptionsClass!}">
+                    <div class="${properties.kcFormOptionsWrapperClass!}">
+                    </div>
+                </div>
+                <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
+                    <div class="${properties.kcFormButtonsWrapperClass!}">
                         <input class="${properties.kcFormLinkClass!}" style="background:none; border-width:0px; text-decoration:underline; cursor: pointer;" name="reset_credentials" id="kc-reset_credentials" type="submit" value="${msg("doSmsResetCredentials")}"/>
                 </div>
             </div>            

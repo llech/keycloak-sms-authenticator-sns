@@ -54,8 +54,11 @@ public class KeycloakSmsAuthenticator implements Authenticator {
             if (StringUtils.isNotBlank(mobileNumber)) {
                 // The mobile number is configured --> send an SMS
 
-                // TODO do not generate new token if old token is still valid?
-              if (sendSMSToken(context)) {
+                // do not generate new token if old token is still valid?
+              // we actually don't know here if the whole flow was restarted (user typed app page and was prompted for pass) 
+              // or only our part (user pressed F5) so we need to be very careful here to provide low-frustrating user experience
+              boolean codeStillValid = isCodeStillValid(context);
+              if (codeStillValid || sendSMSToken(context)) {
                 Response challenge = context.form().createForm("sms-validation.ftl");
                 context.challenge(challenge);
               } else {
@@ -109,12 +112,13 @@ public class KeycloakSmsAuthenticator implements Authenticator {
     public void action(AuthenticationFlowContext context) {
         logger.debug("action called ... context = " + context);
         
-        boolean isReset = StringUtils.isNotEmpty( context.getHttpRequest().getDecodedFormParameters().getFirst("reset_credentials") );
+        boolean isResetCredentials = StringUtils.isNotEmpty( context.getHttpRequest().getDecodedFormParameters().getFirst("reset_credentials") );
+        boolean isResendSms = StringUtils.isNotEmpty( context.getHttpRequest().getDecodedFormParameters().getFirst("resend_sms") );
         String backupCode = context.getHttpRequest().getDecodedFormParameters().getFirst(KeycloakSmsConstants.ANSW_BACKUP_CODE);
         
         Response challenge = null;
         
-        if (isReset) {
+        if (isResetCredentials) {
           if (StringUtils.isNotEmpty(backupCode)) {
             CODE_STATUS status = validateBackupCode(context, backupCode);
             switch (status) {
@@ -145,8 +149,43 @@ public class KeycloakSmsAuthenticator implements Authenticator {
           return;
         } 
         
-        CODE_STATUS status = validateCode(context);
+        // this is a button that requests sending new SMS
+        // which is allowed only once unless the previously generated token is not expired
+        // if the previous token is expired, resend
+        if (isResendSms) {
+          boolean oldCodeValid = isCodeStillValid(context);
+          String resendCounterStr = KeycloakSmsAuthenticatorUtil.getUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_RESEND_COUNTER);
+          long resendCounter = 0;
+          if (StringUtils.isNumeric(resendCounterStr)) {
+            resendCounter = Long.parseLong(resendCounterStr);
+          }
+          if (oldCodeValid && resendCounter > 0) {
+            // do not allow
+            // TODO add rule, resent allowed first 30 secs after generating the token
+            challenge = context.form()
+                .setError("sms-auth.code.resendNotAllowed")
+                .createForm("sms-validation.ftl");
+            context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
+          } else {
+            // resend
+            sendSMSToken(context);
+            // if old code valid, increment counter
+            if (oldCodeValid) {
+              KeycloakSmsAuthenticatorUtil.writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_RESEND_COUNTER, Long.toString(resendCounter+1));
+            } else {
+              // else reset counter
+              KeycloakSmsAuthenticatorUtil.writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_RESEND_COUNTER, null);
+            }
+            challenge = context.form()
+                .setError("sms-auth.code.resent")
+                .createForm("sms-validation.ftl");
+            context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
+          }
+          return;
+        }
         
+        // 'classic' state where we validate the sms code
+        CODE_STATUS status = validateCode(context);
         switch (status) {
             case EXPIRED:
                 // resend the token
@@ -184,6 +223,8 @@ public class KeycloakSmsAuthenticator implements Authenticator {
                 updateVerifiedMobilenumber(context);
                 // remove stored SMS code
                 storeSMSCode(context, null, null);
+                // remove reset counter
+                KeycloakSmsAuthenticatorUtil.writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_RESEND_COUNTER, null);
                 break;
 
         }
@@ -260,6 +301,15 @@ public class KeycloakSmsAuthenticator implements Authenticator {
       }
       return CODE_STATUS.INVALID;
     }
+    
+    protected boolean isCodeStillValid(AuthenticationFlowContext context) {
+      Long expireTime = getStoredSMSCodeExpireTime(context); 
+      if (expireTime == null)
+        return false;
+      long now = new Date().getTime();
+      logger.debug("Valid code expires in " + (expireTime - now) + " ms");
+      return expireTime >= now;
+    }
 
     protected CODE_STATUS validateCode(AuthenticationFlowContext context) {
         CODE_STATUS result = CODE_STATUS.INVALID;
@@ -269,21 +319,14 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         String enteredCode = formData.getFirst(KeycloakSmsConstants.ANSW_SMS_CODE);
 
         String expectedCode = getStoredSMSCode(context);
-        Long expireTime = getStoredSMSCodeExpireTime(context); 
 
         logger.debug("Expected code = " + expectedCode + "    entered code = " + enteredCode);
 
         if (expectedCode != null) {
             result = enteredCode.equals(expectedCode) ? CODE_STATUS.VALID : CODE_STATUS.INVALID;
-            if (expireTime != null) {
-              long now = new Date().getTime();
-              logger.debug("Valid code expires in " + (expireTime - now) + " ms");
-              if (result == CODE_STATUS.VALID) {
-                  if (expireTime < now) {
-                      logger.debug("Code is expired !!");
-                      result = CODE_STATUS.EXPIRED;
-                  }
-              }
+            if (result == CODE_STATUS.VALID && !isCodeStillValid(context)) {
+              logger.debug("Code is expired !!");
+              result = CODE_STATUS.EXPIRED;
             }
         }
         logger.debug("result : " + result);
