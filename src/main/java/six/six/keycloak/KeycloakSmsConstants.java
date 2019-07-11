@@ -9,6 +9,7 @@ public class KeycloakSmsConstants {
     public static final String ATTR_MOBILE_VERIFIED = "mobile_number_verified";
     public static final String ATTR_CODE_CONFIRMED = "sms_code_confirmed";
     public static final String ATTR_BACKUP_CODE = "sms2fa_backup_code";
+    public static final String ATTR_RESEND_COUNTER = "sms_resend_counter";
     public static final String VERIFY_MOBILENUMBER_KEY = "VERIFY_MOBILENUMBER_KEY";
     public static final String ANSW_SMS_CODE = "smsCode";
     public static final String ANSW_BACKUP_CODE = "backupCode";
