@@ -53,28 +53,17 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         if (onlyForVerification==false || isOnlyForVerificationMode(onlyForVerification, mobileNumber,mobileNumberVerified)){
             if (StringUtils.isNotBlank(mobileNumber)) {
                 // The mobile number is configured --> send an SMS
-                long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
-                logger.debug("Using nrOfDigits " + nrOfDigits);
 
-
-                long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
-
-                logger.debug("Using ttl " + ttl + " (s)");
-
-                boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
-                String mockCode = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMSM_MOCK_CODE, "123456");
-                String code = useMock ? mockCode : KeycloakSmsAuthenticatorUtil.getSmsCode(nrOfDigits);
-
-                storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
-                if (useMock || KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context.getAuthenticatorConfig(), context.getSession(), context.getRealm(), context.getUser())) {
-                    Response challenge = context.form().createForm("sms-validation.ftl");
-                    context.challenge(challenge);
-                } else {
-                    Response challenge = context.form()
-                            .setError("sms-auth.not.send")
-                            .createForm("sms-validation-error.ftl");
-                    context.failureChallenge(AuthenticationFlowError.INTERNAL_ERROR, challenge);
-                }
+                // TODO do not generate new token if old token is still valid?
+              if (sendSMSToken(context)) {
+                Response challenge = context.form().createForm("sms-validation.ftl");
+                context.challenge(challenge);
+              } else {
+                Response challenge = context.form()
+                    .setError("sms-auth.not.send")
+                    .createForm("sms-validation-error.ftl");
+                context.failureChallenge(AuthenticationFlowError.INTERNAL_ERROR, challenge);
+              }
             } else {
                 boolean isAskingFor=KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.MOBILE_ASKFOR_ENABLED);
                 if(isAskingFor){
@@ -93,6 +82,27 @@ public class KeycloakSmsAuthenticator implements Authenticator {
             logger.debug("Skip SMS code because onlyForVerification " + onlyForVerification + " or  mobileNumber==mobileNumberVerified");
             context.success();
         }
+    }
+    
+    private boolean sendSMSToken(AuthenticationFlowContext context){
+      UserModel user = context.getUser();
+      AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+      String mobileNumber = KeycloakSmsAuthenticatorUtil.getMobileNumber(user);
+      
+      long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_LENGTH, 8L);
+      logger.debug("Using nrOfDigits " + nrOfDigits);
+      long ttl = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_CODE_TTL, 10 * 60L); // 10 minutes in s
+      logger.debug("Using ttl " + ttl + " (s)");
+      boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
+      String mockCode = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMSM_MOCK_CODE, "123456");
+      String code = useMock ? mockCode : KeycloakSmsAuthenticatorUtil.generateSmsCode((int) nrOfDigits);
+
+      storeSMSCode(context, code, new Date().getTime() + (ttl * 1000)); // s --> ms
+      if (useMock || KeycloakSmsAuthenticatorUtil.sendSmsCode(mobileNumber, code, context.getAuthenticatorConfig(), context.getSession(), context.getRealm(), context.getUser())) {
+        return true;
+      } else {
+        return false;
+      }
     }
 
     @Override
@@ -139,10 +149,18 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         
         switch (status) {
             case EXPIRED:
-                challenge = context.form()
-                        .setError("sms-auth.code.expired")
-                        .createForm("sms-validation.ftl");
-                context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
+                // resend the token
+                if (sendSMSToken(context)) {
+                  challenge = context.form()
+                      .setError("sms-auth.code.expired")
+                      .createForm("sms-validation.ftl");
+                  context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
+                } else {
+                  challenge = context.form()
+                      .setError("sms-auth.not.send")
+                      .createForm("sms-validation-error.ftl");
+                  context.failureChallenge(AuthenticationFlowError.INTERNAL_ERROR, challenge);
+                }
                 break;
 
             case INVALID:
@@ -164,6 +182,8 @@ public class KeycloakSmsAuthenticator implements Authenticator {
             case VALID:
                 context.success();
                 updateVerifiedMobilenumber(context);
+                // remove stored SMS code
+                storeSMSCode(context, null, null);
                 break;
 
         }
@@ -196,10 +216,38 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
         context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
 
-        credentials.setType(KeycloakSmsConstants.USR_CRED_MDL_SMS_EXP_TIME);
-        credentials.setValue((expiringAt).toString());
-        context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
+        KeycloakSmsAuthenticatorUtil.writeUserAttribute(context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_EXP_TIME, expiringAt == null ? null : Long.toString(expiringAt));
+        //credentials.setType(KeycloakSmsConstants.USR_CRED_MDL_SMS_EXP_TIME);
+        //credentials.setValue(expiringAt == null ? null : Long.toString(expiringAt));
+        //context.getSession().userCredentialManager().updateCredential(context.getRealm(), context.getUser(), credentials);
     }
+    
+    private String getStoredSMSCode(AuthenticationFlowContext context) {
+      List codeCreds = context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_CODE);
+      if (codeCreds.isEmpty()) {
+        return null;
+      }
+      CredentialModel expectedCode = (CredentialModel) codeCreds.get(0);
+      return expectedCode.getValue();
+    }
+    
+    private Long getStoredSMSCodeExpireTime(AuthenticationFlowContext context) {
+//      List timeCreds = context.getSession().userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_EXP_TIME);
+//      if (timeCreds.isEmpty()) {
+//        return null;
+//      }
+//      String expTimeString = ((CredentialModel) timeCreds.get(0)).getValue();
+      String expTimeString = KeycloakSmsAuthenticatorUtil.getUserAttribute(context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_EXP_TIME);
+      if (StringUtils.isNotBlank(expTimeString)) {
+        try {
+          return Long.parseLong(expTimeString);
+        } catch (NumberFormatException e) {
+          logger.warn("Value stored as "+KeycloakSmsConstants.USR_CRED_MDL_SMS_EXP_TIME+" is not a number");
+        }
+      }
+      return null;
+    }
+
 
     
     protected CODE_STATUS validateBackupCode(AuthenticationFlowContext context, String backupCode) {
@@ -219,36 +267,35 @@ public class KeycloakSmsAuthenticator implements Authenticator {
         logger.debug("validateCode called ... ");
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String enteredCode = formData.getFirst(KeycloakSmsConstants.ANSW_SMS_CODE);
-        KeycloakSession session = context.getSession();
 
-        List codeCreds = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_CODE);
-        /*List timeCreds = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), KeycloakSmsAuthenticatorConstants.USR_CRED_MDL_SMS_EXP_TIME);*/
-
-        CredentialModel expectedCode = (CredentialModel) codeCreds.get(0);
-        /*CredentialModel expTimeString = (CredentialModel) timeCreds.get(0);*/
+        String expectedCode = getStoredSMSCode(context);
+        Long expireTime = getStoredSMSCodeExpireTime(context); 
 
         logger.debug("Expected code = " + expectedCode + "    entered code = " + enteredCode);
 
         if (expectedCode != null) {
-            result = enteredCode.equals(expectedCode.getValue()) ? CODE_STATUS.VALID : CODE_STATUS.INVALID;
-            /*long now = new Date().getTime();
-
-            logger.debug("Valid code expires in " + (Long.parseLong(expTimeString.getValue()) - now) + " ms");
-            if (result == CODE_STATUS.VALID) {
-                if (Long.parseLong(expTimeString.getValue()) < now) {
-                    logger.debug("Code is expired !!");
-                    result = CODE_STATUS.EXPIRED;
-                }
-            }*/
+            result = enteredCode.equals(expectedCode) ? CODE_STATUS.VALID : CODE_STATUS.INVALID;
+            if (expireTime != null) {
+              long now = new Date().getTime();
+              logger.debug("Valid code expires in " + (expireTime - now) + " ms");
+              if (result == CODE_STATUS.VALID) {
+                  if (expireTime < now) {
+                      logger.debug("Code is expired !!");
+                      result = CODE_STATUS.EXPIRED;
+                  }
+              }
+            }
         }
         logger.debug("result : " + result);
         return result;
     }
+    
     @Override
     public boolean requiresUser() {
         logger.debug("requiresUser called ... returning true");
         return true;
     }
+    
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
         logger.debug("configuredFor called ... session=" + session + ", realm=" + realm + ", user=" + user);
