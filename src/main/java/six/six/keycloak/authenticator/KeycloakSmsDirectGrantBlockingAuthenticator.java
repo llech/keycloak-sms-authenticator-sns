@@ -33,7 +33,13 @@ public class KeycloakSmsDirectGrantBlockingAuthenticator implements Authenticato
     logger.debug("authenticate called ... context = " + context);
     UserModel user = context.getUser();
     //AuthenticatorConfigModel config = context.getAuthenticatorConfig();
-    AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+    AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias(KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR);
+    // if config not found
+    if (config == null) {
+      logger.error("Configuration '"+KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR+"' not found");
+      context.failure(AuthenticationFlowError.INTERNAL_ERROR);
+      return;
+    }
 
     boolean onlyForVerification = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.MOBILE_VERIFICATION_ENABLED);
 

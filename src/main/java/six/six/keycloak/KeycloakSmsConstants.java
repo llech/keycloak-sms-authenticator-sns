@@ -4,6 +4,9 @@ package six.six.keycloak;
  * Created by joris on 18/11/2016.
  */
 public class KeycloakSmsConstants {
+    // configuration
+   public static final String CONFIG_ALIAS_SMS_AUTHENTICATOR = "sms-authenticator";
+  
     public static final String ATTR_MOBILE = "mobile_number";
     public static final String ATTR_MOBILE_TMP = "mobile_number_tmp";
     public static final String ATTR_MOBILE_VERIFIED = "mobile_number_verified";

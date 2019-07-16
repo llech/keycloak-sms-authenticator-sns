@@ -47,7 +47,14 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             mobileNumber = mobileNumberCreds.get(0);
         }
 
-        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias(KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR);
+        // if config not found
+        if (config == null) {
+          logger.error("Configuration '"+KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR+"' not found");
+          context.failure();
+          return;
+        }
+        
         String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
         if (StringUtils.isNotBlank(mobileNumber) && validateTelephoneNumber(mobileNumber, phoneNoRegexp)) {
             // Mobile number is configured
@@ -88,7 +95,13 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
         String smsCode = (context.getHttpRequest().getDecodedFormParameters().getFirst("sms_code_confirm"));
         
         // module configuration
-        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias(KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR);
+        // if config not found
+        if (config == null) {
+          logger.error("Configuration '"+KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR+"' not found");
+          context.failure();
+          return;
+        }
         boolean isUse2faBackup = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_2FA_BACKUP);
         boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
 
