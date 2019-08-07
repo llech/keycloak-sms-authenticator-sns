@@ -139,6 +139,13 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
         configProperties.add(property);
         
         property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMSM_SEND_2FA_BACKUP_SMS);
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        property.setLabel("Send 2fa backup code with SMS");
+        property.setHelpText("Send 2fa backup with SMS (otherwise, it will be only shown)");
+        configProperties.add(property);
+        
+        property = new ProviderConfigProperty();
         property.setName(KeycloakSmsConstants.CONF_PRP_SMS_BACKUP_CODE_LENGTH);
         property.setLabel("2FA backup code length");
         property.setType(ProviderConfigProperty.STRING_TYPE);
