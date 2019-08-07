@@ -4,6 +4,9 @@ package six.six.keycloak;
  * Created by joris on 18/11/2016.
  */
 public class KeycloakSmsConstants {
+    // configuration
+   public static final String CONFIG_ALIAS_SMS_AUTHENTICATOR = "sms-authenticator";
+  
     public static final String ATTR_MOBILE = "mobile_number";
     public static final String ATTR_MOBILE_TMP = "mobile_number_tmp";
     public static final String ATTR_MOBILE_VERIFIED = "mobile_number_verified";
@@ -42,6 +45,7 @@ public class KeycloakSmsConstants {
     // backup 2fa code
     public static final String CONF_PRP_SMSM_USE_2FA_BACKUP = "sms.auth.code.use-2fa-backup";
     public static final String CONF_PRP_SMS_BACKUP_CODE_LENGTH = "sms-auth.code-2fa-backup.length";
+    public static final String CONF_PRP_SMSM_SEND_2FA_BACKUP_SMS = "sms.auth.code.send-2fa-backup-sms";
     
     // Messages
     public static final String MSG_SMS_TEXT = "sms-auth.msg.text";

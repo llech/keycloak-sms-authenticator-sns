@@ -47,7 +47,14 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
             mobileNumber = mobileNumberCreds.get(0);
         }
 
-        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias(KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR);
+        // if config not found
+        if (config == null) {
+          logger.error("Configuration '"+KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR+"' not found");
+          context.failure();
+          return;
+        }
+        
         String phoneNoRegexp = KeycloakSmsAuthenticatorUtil.getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_MOBILE_REGEXP);
         if (StringUtils.isNotBlank(mobileNumber) && validateTelephoneNumber(mobileNumber, phoneNoRegexp)) {
             // Mobile number is configured
@@ -88,9 +95,16 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
         String smsCode = (context.getHttpRequest().getDecodedFormParameters().getFirst("sms_code_confirm"));
         
         // module configuration
-        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias("sms-authenticator");
+        AuthenticatorConfigModel config = context.getRealm().getAuthenticatorConfigByAlias(KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR);
+        // if config not found
+        if (config == null) {
+          logger.error("Configuration '"+KeycloakSmsConstants.CONFIG_ALIAS_SMS_AUTHENTICATOR+"' not found");
+          context.failure();
+          return;
+        }
         boolean isUse2faBackup = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_2FA_BACKUP);
         boolean useMock = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK, false);
+        boolean send2faBackupWithSMS = KeycloakSmsAuthenticatorUtil.getConfigBoolean(config, KeycloakSmsConstants.CONF_PRP_SMSM_SEND_2FA_BACKUP_SMS, false);
 
         KeycloakSession session = context.getSession();
         List codeCreds = session.userCredentialManager().getStoredCredentialsByType(context.getRealm(), context.getUser(), KeycloakSmsConstants.USR_CRED_MDL_SMS_CODE);
@@ -129,8 +143,8 @@ public class KeycloakSmsMobilenumberRequiredAction implements RequiredActionProv
               long nrOfDigits = KeycloakSmsAuthenticatorUtil.getConfigLong(config, KeycloakSmsConstants.CONF_PRP_SMS_BACKUP_CODE_LENGTH, 10L);
               String code = KeycloakSmsAuthenticatorUtil.generateSmsCode((int) nrOfDigits);
               KeycloakSmsAuthenticatorUtil.writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_BACKUP_CODE, code);
-              // TODO show page with the code
-              boolean isSent = useMock || KeycloakSmsAuthenticatorUtil.sendBackupCode(tmpPhoneNo, code, config, context.getSession(), context.getRealm(), context.getUser());
+              // TODO deactivate sending backup code with SMS via config param
+              boolean isSent = useMock || !send2faBackupWithSMS || KeycloakSmsAuthenticatorUtil.sendBackupCode(tmpPhoneNo, code, config, context.getSession(), context.getRealm(), context.getUser());
               if (!isSent) {
                 logger.warn("Failed to send SMS with backup code to phone number "+tmpPhoneNo);
               }
