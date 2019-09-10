@@ -114,7 +114,16 @@ public class KeycloakSmsAuthenticatorFactory implements AuthenticatorFactory, Co
         property.setHelpText("AWS Client Secret or LyraSMS Password");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
-        
+
+        // senderId
+        property = new ProviderConfigProperty();
+        property.setName(KeycloakSmsConstants.CONF_PRP_SMS_SENDERID);
+        property.setLabel("Sender ID");
+        property.setHelpText("Sender ID (shown as sender number)");
+        property.setDefaultValue("Keycloak");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+
         // mock code (only for mock provider)
         property = new ProviderConfigProperty();
         property.setName(KeycloakSmsConstants.CONF_PRP_SMSM_USE_MOCK);
