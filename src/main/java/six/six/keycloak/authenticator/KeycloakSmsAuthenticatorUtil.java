@@ -184,6 +184,7 @@ public class KeycloakSmsAuthenticatorUtil {
         String smsPwd = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_CLIENTSECRET));
         String gateway = getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY);
         String endpoint = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY_ENDPOINT));
+        String senderId = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_SENDERID));
         boolean isProxy = getConfigBoolean(config, KeycloakSmsConstants.PROXY_ENABLED);
         
         String mobilePrefixDefault =  EnvSubstitutor.envSubstitutor.replace(getConfigString(config, 
@@ -200,7 +201,7 @@ public class KeycloakSmsAuthenticatorUtil {
                     smsService=new LyraSMSService(endpoint,isProxy);
                     break;
                 case HORISEN:
-                  smsService = new HorisenSMSService(endpoint);
+                  smsService = new HorisenSMSService(endpoint, senderId);
                   break;
                 case AMAZON_SNS:  
                   smsService=new SnsNotificationService();

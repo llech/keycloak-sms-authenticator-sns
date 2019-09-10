@@ -28,7 +28,9 @@ public class HorisenSMSService implements SMSService
   
   private Gson gson;
   
-  public HorisenSMSService(String url)
+  private String senderId;
+  
+  public HorisenSMSService(String url, String senderId)
   {
     this.url = url;
     httpClient = org.apache.http.impl.client.HttpClients.custom()
@@ -36,6 +38,7 @@ public class HorisenSMSService implements SMSService
         .setMaxConnTotal(20)
         .build();
     gson = new GsonBuilder().disableHtmlEscaping().create();
+    this.senderId = senderId;
   }
   
   @Override
@@ -52,7 +55,7 @@ public class HorisenSMSService implements SMSService
     auth.setPassword(pw);
     SmsRequest request = new SmsRequest();
     request.setAuth(auth);
-    request.setSender("Keycloak");
+    request.setSender(senderId);
     request.setReceiver(phoneNumberSanitized);
     request.setText(message);
     
