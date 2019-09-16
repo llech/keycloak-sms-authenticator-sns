@@ -191,7 +191,7 @@ public class KeycloakSmsAuthenticator implements Authenticator {
                 // resend the token
                 if (sendSMSToken(context)) {
                   challenge = context.form()
-                      .setError("sms-auth.code.expired")
+                      .setSuccess("sms-auth.code.expired")
                       .createForm("sms-validation.ftl");
                   context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
                 } else {
