@@ -177,7 +177,7 @@ public class KeycloakSmsAuthenticator implements Authenticator {
               KeycloakSmsAuthenticatorUtil.writeUserAttribute(context.getUser(), KeycloakSmsConstants.ATTR_RESEND_COUNTER, null);
             }
             challenge = context.form()
-                .setError("sms-auth.code.resent")
+                .setSuccess("sms-auth.code.resent")
                 .createForm("sms-validation.ftl");
             context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
           }
@@ -191,7 +191,7 @@ public class KeycloakSmsAuthenticator implements Authenticator {
                 // resend the token
                 if (sendSMSToken(context)) {
                   challenge = context.form()
-                      .setSuccess("sms-auth.code.expired")
+                      .setError("sms-auth.code.expired")
                       .createForm("sms-validation.ftl");
                   context.failureChallenge(AuthenticationFlowError.EXPIRED_CODE, challenge);
                 } else {
