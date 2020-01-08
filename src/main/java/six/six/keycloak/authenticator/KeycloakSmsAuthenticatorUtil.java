@@ -14,6 +14,7 @@ import org.keycloak.theme.ThemeProvider;
 import six.six.gateway.Gateways;
 import six.six.gateway.SMSService;
 import six.six.gateway.aws.snsclient.SnsNotificationService;
+import six.six.gateway.eagle.EagleSMSService;
 import six.six.gateway.horisen.HorisenSMSService;
 import six.six.gateway.lyrasms.LyraSMSService;
 import six.six.keycloak.EnvSubstitutor;
@@ -187,6 +188,9 @@ public class KeycloakSmsAuthenticatorUtil {
                     break;
                 case HORISEN:
                   smsService = new HorisenSMSService(endpoint);
+                  break;
+                case EAGLE:
+                  smsService = new EagleSMSService(endpoint);
                   break;
                 default:
                     smsService=new SnsNotificationService();
