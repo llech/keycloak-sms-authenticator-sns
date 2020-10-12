@@ -7,5 +7,6 @@ public enum Gateways {
     AMAZON_SNS,
     LYRA_SMS,
     HORISEN,
-    EAGLE
+    EAGLE,
+    ASPSMS
 }

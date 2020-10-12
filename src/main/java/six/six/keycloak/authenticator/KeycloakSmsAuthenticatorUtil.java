@@ -25,6 +25,7 @@ import com.google.i18n.phonenumbers.Phonenumber;
 
 import six.six.gateway.Gateways;
 import six.six.gateway.SMSService;
+import six.six.gateway.aspsms.AspSMSService;
 import six.six.gateway.aws.snsclient.SnsNotificationService;
 import six.six.gateway.eagle.EagleSMSService;
 import six.six.gateway.horisen.HorisenSMSService;
@@ -209,6 +210,9 @@ public class KeycloakSmsAuthenticatorUtil {
                   break;
                 case EAGLE:
                   smsService = new EagleSMSService(endpoint);
+                  break;
+                case ASPSMS:
+                  smsService = new AspSMSService(endpoint);
                   break;
                 default:
                   throw new IllegalArgumentException("Unsupported gateway type: "+gateway);
