@@ -48,7 +48,7 @@ public class AspSMSService implements SMSService
     request.setMessageText("This is a SMS gateway test");
     String json = gson.toJson(request);
 
-    String gatewayUrl = this.url + "/CheckCredits";
+    String gatewayUrl = this.url + "/SendTextSMS";
     HttpPost post = new HttpPost(gatewayUrl);
     //post.addHeader("Content-Type", "application/json");
     post.addHeader("Accept", "application/json");
