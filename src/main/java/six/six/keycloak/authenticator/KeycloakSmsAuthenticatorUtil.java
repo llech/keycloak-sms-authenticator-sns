@@ -212,7 +212,7 @@ public class KeycloakSmsAuthenticatorUtil {
                   smsService = new EagleSMSService(endpoint);
                   break;
                 case ASPSMS:
-                  smsService = new AspSMSService(endpoint);
+                  smsService = new AspSMSService(endpoint, senderId);
                   break;
                 default:
                   throw new IllegalArgumentException("Unsupported gateway type: "+gateway);

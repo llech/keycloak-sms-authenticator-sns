@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -27,9 +28,12 @@ public class AspSMSService implements SMSService
   
   private Gson gson;
   
-  public AspSMSService(final String url)
+  private String senderId; 
+  
+  public AspSMSService(final String url, final String senderId)
   {
     this.url = url;
+    this.senderId = senderId;
     httpClient = org.apache.http.impl.client.HttpClients.custom()
         .setMaxConnPerRoute(10)
         .setMaxConnTotal(20)
@@ -40,12 +44,18 @@ public class AspSMSService implements SMSService
   @Override
   public boolean send(String phoneNumber, String message, String login, String pw)
   {
+    // first sanitize and verify phone number
+    if (StringUtils.isBlank(phoneNumber))
+      return false;
+    // clean-up input, removing whitespaces and hyphens
+    String phoneNumberSanitized = phoneNumber.replaceAll("-|\\s", "");
+    
     AspSmsRequest request = new AspSmsRequest();
     request.setUserName(login);
     request.setPassword(pw);
-    request.setOriginator("Ringler-Test");
-    request.setRecipients(new String[] {"+41765314155"});
-    request.setMessageText("This is a SMS gateway test");
+    request.setOriginator(senderId);
+    request.setRecipients(new String[] {phoneNumberSanitized});
+    request.setMessageText(message);
     String json = gson.toJson(request);
 
     String gatewayUrl = this.url + "/SendTextSMS";
