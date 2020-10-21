@@ -292,6 +292,11 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
     
     protected CODE_STATUS validateBackupCode(AuthenticationFlowContext context, String backupCode) {
+      if (!context.getUser().isEnabled()) {
+        logger.info("validateBackupCode: user "+context.getUser().getId()+" is blocked");
+        return CODE_STATUS.INVALID;
+      }
+      
       String backupCodeStored =  KeycloakSmsAuthenticatorUtil.getAttributeValue(context.getUser(), KeycloakSmsConstants.ATTR_BACKUP_CODE);
       if (StringUtils.isBlank(backupCodeStored)) {
         return CODE_STATUS.EXPIRED;
@@ -313,6 +318,11 @@ public class KeycloakSmsAuthenticator implements Authenticator {
 
     protected CODE_STATUS validateCode(AuthenticationFlowContext context) {
         CODE_STATUS result = CODE_STATUS.INVALID;
+        
+        if (!context.getUser().isEnabled()) {
+          logger.info("validateCode: user "+context.getUser().getId()+" is blocked");
+          return result;
+        }
 
         logger.debug("validateCode called ... ");
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
